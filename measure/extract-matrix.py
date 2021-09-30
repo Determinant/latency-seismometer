@@ -44,5 +44,5 @@ if __name__ == "__main__":
         for j in range(n):
             row[j].sort()
         matrix.append((node, row))
-    with open(arg.output if args.output else 'latency.pickle', 'wb') as f:
+    with open(args.output if args.output else 'latency.pickle', 'wb') as f:
         pickle.dump(matrix, f)
