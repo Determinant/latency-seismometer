@@ -1,0 +1,33 @@
+---
+# available vars:
+# last_state -- the content of state.json
+# nid -- host_idx (with 0 as default)
+# ngroup -- the group of nodes involved in the build
+# testbed -- the remote path of run_id
+
+- vars:
+    conf_dir: "{{ (testbed, pinger_conf_dir) | path_join }}"
+    log_dir: "{{ (testbed, pinger_log_dir) | path_join }}"
+  block:
+    - name: create testbed dirs
+      block:
+        - file:
+            path: "{{ conf_dir }}"
+            state: directory
+        - file:
+            path: "{{ log_dir }}"
+            state: directory
+    - name: copy the list of IPs
+      copy:
+        src: "{{ (lookup('env','run_path'), pinger_base_conf) | path_join }}"
+        dest: "{{ (conf_dir, 'ips.txt') | path_join }}"
+        mode: '0644'
+    - name: start the pinger
+      pinger:
+        bin: "{{ pinger_bin | default('~/latency-seismometer/target/release/ls-pinger') }}"
+        log_dir: "{{ log_dir }}"
+        cwd: "{{ conf_dir }}"
+        ips: "{{ (conf_dir, 'ips.txt') | path_join }}"
+      environment:
+        PATH: /sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/snap/bin
+      register: spawn_results

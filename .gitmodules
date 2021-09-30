@@ -1,0 +1,3 @@
+[submodule "measure/minirun"]
+	path = measure/minirun
+	url = https://github.com/Determinant/minirun.git

@@ -1,0 +1,23 @@
+---
+# available vars:
+# last_state -- the content of state.json
+# nid -- host_idx (with 0 as default)
+# ngroup -- the group of nodes involved in the build
+# testbed -- the remote path of run_id
+
+- name: build pinger binary
+  block:
+    - file:
+        path: "{{ (pinger_repo_dir, 'target') | path_join }}"
+        state: absent
+    - command: cargo build --release
+      args:
+        chdir: "{{ pinger_repo_dir }}"
+      environment:
+        PATH: /sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin:/snap/bin:/home/ubuntu/.cargo/bin
+    - command: chown root "{{ pinger_bin }}"
+      become: true
+      become_user: root
+    - command: chmod u+s "{{ pinger_bin }}"
+      become: true
+      become_user: root

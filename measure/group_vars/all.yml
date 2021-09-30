@@ -1,0 +1,27 @@
+---
+## basic config
+
+# NOTE: change to your aws ec2 key file here
+ansible_ssh_private_key_file: ~/Downloads/ted-oregon.pem
+
+# the rest of config works for Ubuntu 18.04 image on Amazon EC2
+
+ansible_connection: ssh
+ansible_user: ubuntu
+# remote directory that keeps the work directory for the running app
+testbed_prefix: "/home/ubuntu/testbed"
+# must use Python 3
+ansible_python_interpreter: /usr/bin/python3
+
+## app config
+# process name that is used by killall in reset
+bin_name: ls-pinger
+# binary path (remote)
+pinger_bin: "/home/ubuntu/latency-seismometer/target/release/ls-pinger"
+# remote repo path
+pinger_repo_dir: "/home/ubuntu/latency-seismometer"
+# local source code path (that will be copied to the remote)
+pinger_local_repo_dir: "../"
+pinger_conf_dir: "conf"
+pinger_log_dir: "log"
+pinger_base_conf: "ips.txt"

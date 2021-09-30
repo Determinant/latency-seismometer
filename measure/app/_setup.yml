@@ -1,0 +1,30 @@
+---
+# available vars:
+# workdir -- the local directory of run_id
+
+- name: setup pinger
+  block:
+    - apt:
+        pkg:
+          - build-essential
+        state:
+          latest
+        update_cache: yes
+      become: true
+      become_user: root
+    - shell:
+        cmd: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - file:
+        path: "{{ pinger_repo_dir }}"
+        state: directory
+    - synchronize:
+        archive: true
+        delete: true
+        src: "{{ (workdir, pinger_local_repo_dir, '') | path_join }}"
+        dest: "{{ pinger_repo_dir }}"
+        mode: push
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=/target/"
+          - "--exclude=/measure"
+          - "--delete-excluded"
