@@ -15,7 +15,3 @@ log = "0.4.14"
 [[bin]]
 name = "ls-pinger"
 path = "src/pinger.rs"
-
-[[bin]]
-name = "ls-matrix"
-path = "src/matrix.rs"
