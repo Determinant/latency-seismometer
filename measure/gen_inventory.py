@@ -7,7 +7,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("[nodes_setup]")
-    host_idx_count = {}
     ips = []
     with open(args.ips, "r") as rfile:
         for line in rfile:
@@ -16,7 +15,5 @@ if __name__ == "__main__":
     print("\n".join(machines))
     print("\n[nodes]")
     for (i, pub_ip) in enumerate(ips):
-        host_idx = host_idx_count.setdefault(pub_ip, 0)
-        host_idx_count[pub_ip] += 1
-        print("replica{} ansible_host={} host_idx={}".format(
-                i, pub_ip, host_idx))
+        print("node{} ansible_host={} host_idx={}".format(
+                i, pub_ip, i))
