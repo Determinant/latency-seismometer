@@ -1,0 +1,143 @@
+<html>
+  <head>
+    <title>Latency Matrix Viewer</title>
+    <style>
+      #matrix table {
+        margin: 0 auto;
+      }
+      #matrix table td {
+        margin: 10px;
+      }
+      #matrix table td div {
+        background-color: #aaaaaa;
+        -webkit-transition: background 0.2s linear;
+        -moz-transition: background 0.2s linear;
+        -o-transition: background 0.2s linear;
+        transition: background 0.2s linear;
+        padding: 5px;
+      }
+
+      .progress {
+        margin: 0 auto;
+        width: 500px;
+        height: 2em;
+        border: 1px solid black;
+      }
+
+      .bar {
+        height: 100%;
+        width: 0%;
+        background-color: deepskyblue;
+        color: white;
+        text-align: center;
+        line-height: 2em;
+
+        transition-property: width;
+        transition-timing-function: linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+    <div id="matrix"></div>
+    <div class="progress">
+      <div class="bar"></div>
+    </div>
+    </div>
+    <script>
+      function intToHex(i) {
+        var hex = parseInt(i).toString(16);
+        return (hex.length < 2) ? "0" + hex : hex;
+      }
+
+      function makeColor(value) {
+        // value must be between [0, 510]
+        value = Math.min(Math.max(0,value), 1) * 510;
+
+        var redValue;
+        var greenValue;
+        if (value < 255) {
+          redValue = 255;
+          greenValue = Math.sqrt(value) * 16;
+          greenValue = Math.round(greenValue);
+        } else {
+          greenValue = 255;
+          value = value - 255;
+          redValue = 255 - (value * value / 255)
+          redValue = Math.round(redValue);
+        }
+        return "#" + intToHex(redValue) + intToHex(greenValue) + "00";
+      }
+
+      var timeline = [];
+      fetch('/latency', {
+        method: 'GET',
+      }).then(res => res.json())
+        .then(o => {
+          const n = o.n;
+          const nNode = o.nNode;
+          console.log("n=" + n);
+          console.log("nNode=" + nNode);
+
+          const container = document.getElementById('matrix');
+          container.innerHTML = "";
+          const matrix = document.createElement('table');
+          container.appendChild(matrix);
+          const mRefs = [];
+          for (var i = 0; i < nNode; i++) {
+            const tRow = document.createElement('tr');
+            const rRow = [];
+            for (var j = 0; j < nNode; j++) {
+              const tCell = document.createElement('td');
+              const inner = document.createElement('div');
+              tCell.appendChild(inner);
+              inner.innerHtml = 'n/a';
+              tRow.appendChild(tCell);
+              rRow.push(inner);
+            }
+            matrix.appendChild(tRow);
+            mRefs.push(rRow);
+          }
+
+          var pms = [];
+          for (var i = 0; i < n; i++) {
+            pms.push(fetch("/latency?idx=" + i, {method: 'GET'}).then(res => res.json()));
+          }
+          const renderFrame = f => {
+            var max = 0;
+            for (var i = 0; i < nNode; i++) {
+              for (var j = 0; j < nNode; j++) {
+                const cell = mRefs[i][j];
+                const ms = (f.avg[i][j] / 1e6).toFixed(2);
+                cell.innerHTML = ms;
+                max = Math.max(max, ms);
+              }
+            }
+            for (var i = 0; i < nNode; i++) {
+              for (var j = 0; j < nNode; j++) {
+                const cell = mRefs[i][j];
+                const norm = 1 - (f.avg[i][j] / 1e6).toFixed(2) / max;
+                cell.style = 'background-color:' + makeColor(norm) + ';';
+              }
+            }
+          };
+          const updateTimeline = v => {
+            var i = 0;
+            const nextFrame = () => {
+              renderFrame(v[i]);
+              console.log((i+1) / n * 100);
+              document.querySelector(".progress .bar").style.width = (i+1) / n * 100 + '%';
+              if (++i < n) {
+                setTimeout(nextFrame, 100);
+              } else {
+                i = 0;
+                setTimeout(nextFrame, 2000);
+              }
+            };
+            nextFrame();
+          };
+          Promise.all(pms).then(v => updateTimeline(v));
+        });
+    </script>
+  </body>
+</html>

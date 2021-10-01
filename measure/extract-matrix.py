@@ -2,13 +2,16 @@ import os
 import re
 import pickle
 import argparse
+import json
+import iso8601
 
 node_pat = re.compile(r'node[0-9]+ ansible_host=([^ ]+) host_idx=([0-9]+)')
 lat_pat = re.compile(r'([0-9-:TZ]+) INFO ([0-9.]+) ([0-9.]*.*s)')
 
 parser = argparse.ArgumentParser(description='Extract the latency matrix from logs.')
 parser.add_argument('dir', help='directory of a run (by ./run.sh)')
-parser.add_argument('--output', nargs=1, help='directory of a run (by ./run.sh)')
+parser.add_argument('--output', help='output file path')
+parser.add_argument('--format', default='pickle', help='output format (pickle/json)')
 
 args = parser.parse_args()
 
@@ -40,9 +43,15 @@ if __name__ == "__main__":
                         ns = float(m[3][:-2]) * 1e6
                     elif m[3][-1:] == 's':
                         ns = float(m[3][:-1]) * 1e9
-                    row[node_map[m[2]]].append((m[1], ns))
+                    t = int(iso8601.parse_date(m[1]).timestamp())
+                    row[node_map[m[2]]].append((t, ns))
         for j in range(n):
             row[j].sort()
         matrix.append((node, row))
-    with open(args.output if args.output else 'latency.pickle', 'wb') as f:
-        pickle.dump(matrix, f)
+    print(args.output)
+    if args.format == "json":
+        with open(args.output if args.output else 'latency.json', 'w') as f:
+            json.dump(matrix, f)
+    else:
+        with open(args.output if args.output else 'latency.pickle', 'wb') as f:
+            pickle.dump(matrix, f)
